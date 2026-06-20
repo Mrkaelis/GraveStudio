@@ -29,7 +29,7 @@ from authlib.integrations.flask_client import OAuth
 from sqlalchemy import inspect, text as sa_text
 
 # Категории сборок, по которым пользователи оставляют отзывы.
-REVIEW_CATEGORIES = ["RW Default", "RW Full", "RW Premium"]
+REVIEW_CATEGORIES = ["RW Defaults", "RW Full", "RW Premium"]
 
 load_dotenv()
 
