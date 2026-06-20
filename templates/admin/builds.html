@@ -1,0 +1,59 @@
+{% extends "admin/_layout.html" %}
+{% block admin %}
+<h1>Сборки</h1>
+
+<div class="card" style="margin-bottom: 20px;">
+  <h3>Добавить сборку</h3>
+  <p style="color: var(--muted); font-size: 13px; margin-top:0;">
+    Покупка списывает указанную цену с баланса аккаунта пользователя. После оплаты сборка появляется
+    в разделе «Мои сборки» со ссылкой на скачивание, которую вы указываете здесь.
+  </p>
+  <form method="POST" class="form-grid">
+    <div class="row2">
+      <label><span>Название</span><input name="title" placeholder="напр. RW Default" required></label>
+      <label><span>Метка тира</span><input name="tier_label" placeholder="напр. TIER 01"></label>
+    </div>
+    <div class="row2">
+      <label><span>Цена (₽, списывается с баланса)</span><input name="price" type="number" min="0" step="1" required></label>
+      <label><span>Порядок отображения</span><input name="order" type="number" value="0"></label>
+    </div>
+    <label><span>Описание (показывается на сайте, необязательно)</span><textarea name="description"></textarea></label>
+    <label><span>Ссылка на скачивание (выдаётся после покупки)</span><input name="download_url" placeholder="https://..."></label>
+    <button class="btn" type="submit">Добавить сборку</button>
+  </form>
+</div>
+
+<table class="data">
+  <thead>
+    <tr>
+      <th>#</th><th>Название</th><th>Тир</th><th>Цена</th><th>Описание</th>
+      <th>Ссылка на скачивание</th><th>Порядок</th><th>Активна</th><th>Покупок</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for b in items %}
+    <tr>
+      <td>{{ b.id }}</td>
+      <form method="POST" action="{{ url_for('admin_builds_update', bid=b.id) }}" style="display:contents;">
+        <td><input name="title" value="{{ b.title }}"></td>
+        <td><input name="tier_label" value="{{ b.tier_label or '' }}" style="width:90px;"></td>
+        <td><input name="price" type="number" min="0" step="1" value="{{ b.price }}" style="width:90px;"></td>
+        <td><textarea name="description">{{ b.description or '' }}</textarea></td>
+        <td><input name="download_url" value="{{ b.download_url or '' }}" placeholder="https://..."></td>
+        <td><input name="order" type="number" value="{{ b.order }}" style="width:70px;"></td>
+        <td style="text-align:center;"><input type="checkbox" name="is_active" {% if b.is_active %}checked{% endif %}></td>
+        <td>{{ purchases_count.get(b.id, 0) }}</td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn-sm primary" title="Сохранить">💾</button>
+      </form>
+          <form method="POST" action="{{ url_for('admin_builds_delete', bid=b.id) }}" onsubmit="return confirm('Удалить сборку {{ b.title }}?')">
+            <button class="btn-sm danger" title="Удалить">✕</button>
+          </form>
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10" style="color: var(--muted);">Сборок пока нет — добавьте первую выше.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

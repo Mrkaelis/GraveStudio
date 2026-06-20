@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  <aside class="admin-side">
+    <h2>⚡ {{ brand_name }} · admin</h2>
+    <a href="{{ url_for('admin_home') }}"     class="{{ 'active' if request.endpoint == 'admin_home' }}">Обзор</a>
+    <a href="{{ url_for('admin_settings') }}" class="{{ 'active' if request.endpoint == 'admin_settings' }}">⚙ Настройки сайта</a>
+    <a href="{{ url_for('admin_services') }}" class="{{ 'active' if request.endpoint == 'admin_services' }}">🛠 Услуги</a>
+    <a href="{{ url_for('admin_builds') }}"   class="{{ 'active' if request.endpoint and request.endpoint.startswith('admin_builds') }}">📦 Сборки</a>
+    <a href="{{ url_for('admin_keys') }}"     class="{{ 'active' if request.endpoint == 'admin_keys' }}">🔑 Ключи баланса</a>
+    <a href="{{ url_for('admin_reviews') }}"  class="{{ 'active' if request.endpoint == 'admin_reviews' }}">⭐ Отзывы</a>
+    <a href="{{ url_for('admin_news') }}"     class="{{ 'active' if request.endpoint == 'admin_news' }}">📰 Новости</a>
+    <a href="{{ url_for('admin_partners') }}" class="{{ 'active' if request.endpoint == 'admin_partners' }}">🤝 Партнёры</a>
+    <a href="{{ url_for('admin_admins') }}"   class="{{ 'active' if request.endpoint == 'admin_admins' }}">👤 Админы</a>
+    <hr style="border-color: var(--border); margin: 16px 0;">
+    <a href="{{ url_for('index') }}">← На сайт</a>
+    <a href="{{ url_for('logout') }}">Выйти</a>
+  </aside>
+  <main class="admin-main">
+    {% block admin %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

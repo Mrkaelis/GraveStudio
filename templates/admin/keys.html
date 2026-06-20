@@ -1,0 +1,66 @@
+{% extends "admin/_layout.html" %}
+{% block admin %}
+<h1>Ключи пополнения баланса</h1>
+
+<div class="stat-grid" style="grid-template-columns: repeat(3, 1fr);">
+  <div class="card"><div class="v">{{ stats.total }}</div>  <div class="l">Всего создано</div></div>
+  <div class="card"><div class="v">{{ stats.unused }}</div> <div class="l">Не активировано</div></div>
+  <div class="card"><div class="v">{{ stats.used }}</div>   <div class="l">Активировано</div></div>
+</div>
+
+<div class="card" style="margin-bottom: 24px;">
+  <h3>Сгенерировать новые ключи</h3>
+  <p style="color: var(--muted); font-size: 13px; margin-top:0;">
+    Ключ можно активировать только один раз — пользователь вводит его в своём профиле
+    (иконка профиля → поле «Код активации»), и баланс пополняется на указанную сумму.
+  </p>
+  <form method="POST" class="form-grid" style="max-width: 480px;">
+    <div class="row2">
+      <label><span>Сумма пополнения (₽)</span><input type="number" name="amount" min="1" step="1" required></label>
+      <label><span>Количество ключей</span><input type="number" name="count" min="1" max="50" value="1" required></label>
+    </div>
+    <button class="btn" type="submit">Сгенерировать</button>
+  </form>
+</div>
+
+<table class="data">
+  <thead>
+    <tr>
+      <th>Код</th>
+      <th>Сумма</th>
+      <th>Статус</th>
+      <th>Кем активирован</th>
+      <th>Создан</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for k in items %}
+    <tr>
+      <td>
+        <code style="cursor:pointer;" title="Нажмите, чтобы скопировать" onclick="navigator.clipboard.writeText('{{ k.code }}')">{{ k.code }}</code>
+      </td>
+      <td>{{ k.amount|money }} ₽</td>
+      <td>
+        {% if k.is_used %}
+          <span style="color: var(--muted);">Использован</span>
+        {% else %}
+          <span style="color: var(--ok); font-weight:700;">Активен</span>
+        {% endif %}
+      </td>
+      <td>{{ k.used_by.email if k.used_by else '—' }}</td>
+      <td>{{ k.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+      <td>
+        {% if not k.is_used %}
+        <form method="POST" action="{{ url_for('admin_keys_delete', kid=k.id) }}" onsubmit="return confirm('Удалить ключ {{ k.code }}?')">
+          <button class="btn-sm danger" type="submit">Удалить</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" style="color: var(--muted);">Ключей пока нет — сгенерируйте первый выше.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

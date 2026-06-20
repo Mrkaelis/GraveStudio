@@ -1,0 +1,40 @@
+{% extends "admin/_layout.html" %}
+{% block admin %}
+<h1>Услуги</h1>
+
+<div class="card" style="margin-bottom: 20px;">
+  <h3>Добавить услугу</h3>
+  <form method="POST" class="form-grid">
+    <div class="row2">
+      <label><span>Название</span><input name="title" required></label>
+      <label><span>Цена</span><input name="price" placeholder="напр. от 500₽"></label>
+    </div>
+    <label><span>Описание</span><textarea name="description"></textarea></label>
+    <label><span>Порядок</span><input name="order" type="number" value="0"></label>
+    <button class="btn" type="submit">Добавить</button>
+  </form>
+</div>
+
+<table class="data">
+  <thead><tr><th>#</th><th>Название</th><th>Цена</th><th>Описание</th><th>Порядок</th><th></th></tr></thead>
+  <tbody>
+    {% for s in items %}
+    <tr>
+      <td>{{ s.id }}</td>
+      <form method="POST" action="{{ url_for('admin_services_update', sid=s.id) }}" style="display:contents;">
+        <td><input name="title" value="{{ s.title }}"></td>
+        <td><input name="price" value="{{ s.price or '' }}"></td>
+        <td><textarea name="description">{{ s.description or '' }}</textarea></td>
+        <td><input name="order" type="number" value="{{ s.order }}" style="width:70px;"></td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn-sm primary">💾</button>
+      </form>
+          <form method="POST" action="{{ url_for('admin_services_delete', sid=s.id) }}" onsubmit="return confirm('Удалить?')">
+            <button class="btn-sm danger">✕</button>
+          </form>
+        </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

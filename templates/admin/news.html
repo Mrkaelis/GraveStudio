@@ -1,0 +1,28 @@
+{% extends "admin/_layout.html" %}
+{% block admin %}
+<h1>Новости</h1>
+<div class="card" style="margin-bottom: 20px;">
+  <h3>Добавить новость</h3>
+  <form method="POST" class="form-grid">
+    <label><span>Заголовок</span><input name="title" required></label>
+    <label><span>Текст</span><textarea name="body"></textarea></label>
+    <button class="btn">Опубликовать</button>
+  </form>
+</div>
+<table class="data">
+  <thead><tr><th>#</th><th>Заголовок</th><th>Текст</th><th>Дата</th><th></th></tr></thead>
+  <tbody>
+    {% for n in items %}
+    <tr>
+      <td>{{ n.id }}</td><td>{{ n.title }}</td><td>{{ n.body }}</td>
+      <td>{{ n.created_at.strftime('%d.%m.%Y') }}</td>
+      <td>
+        <form method="POST" action="{{ url_for('admin_news_delete', nid=n.id) }}" onsubmit="return confirm('Удалить?')">
+          <button class="btn-sm danger">✕</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

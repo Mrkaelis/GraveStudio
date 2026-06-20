@@ -1,0 +1,25 @@
+{% extends "admin/_layout.html" %}
+{% block admin %}
+<h1>Админ-панель</h1>
+<div class="stat-grid">
+  <div class="card"><div class="v">{{ stats.users }}</div>    <div class="l">Пользователи</div></div>
+  <div class="card"><div class="v">{{ stats.services }}</div> <div class="l">Услуги</div></div>
+  <div class="card"><div class="v">{{ stats.builds }}</div>   <div class="l">Сборки</div></div>
+  <div class="card"><div class="v">{{ stats.purchases }}</div><div class="l">Покупок сборок</div></div>
+  <div class="card"><div class="v">{{ stats.reviews }}</div>  <div class="l">Отзывы</div></div>
+  <div class="card"><div class="v">{{ stats.news }}</div>     <div class="l">Новости</div></div>
+  <div class="card"><div class="v">{{ stats.partners }}</div> <div class="l">Партнёры</div></div>
+  <div class="card"><div class="v">{{ stats.keys_unused }}</div> <div class="l">Ключей не активировано</div></div>
+</div>
+
+<div class="card">
+  <h3>Быстрый старт</h3>
+  <p style="color: var(--muted);">
+    Слева — все разделы редактирования. В «Настройках сайта» меняется
+    название бренда, тексты главного экрана, цвета и <b>ссылки кнопок Discord / Telegram / FunPay / Поддержка</b>.
+    В разделе <b>«Сборки»</b> задаются цены и ссылки на скачивание RW Default / RW Full / RW Premium —
+    покупатели оплачивают их с баланса аккаунта, а баланс пополняется через <b>«Ключи баланса»</b>
+    (ключ выдаётся вручную после оплаты на FunPay).
+  </p>
+</div>
+{% endblock %}

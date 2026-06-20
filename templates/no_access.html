@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="no-access">
+  <div>
+    <h1>403</h1>
+    <h2>Нет доступа</h2>
+    <p style="color: var(--muted);">У вас нет прав администратора.</p>
+    <a class="btn" href="{{ url_for('index') }}">На главную</a>
+  </div>
+</div>
+{% endblock %}

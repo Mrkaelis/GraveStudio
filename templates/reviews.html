@@ -1,0 +1,37 @@
+{% extends "admin/_layout.html" %}
+{% block admin %}
+<h1>Отзывы</h1>
+<div class="card" style="margin-bottom: 20px;">
+  <h3>Добавить отзыв</h3>
+  <form method="POST" class="form-grid">
+    <div class="row2">
+      <label><span>Категория</span>
+        <select name="category">
+          {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </label>
+      <label><span>Оценка (1–5)</span><input name="rating" type="number" min="1" max="5" value="5"></label>
+    </div>
+    <label><span>Автор</span><input name="author"></label>
+    <label><span>Текст</span><textarea name="text" required></textarea></label>
+    <button class="btn">Добавить</button>
+  </form>
+</div>
+<table class="data">
+  <thead><tr><th>#</th><th>Категория</th><th>Автор</th><th>Оценка</th><th>Текст</th><th>Дата</th><th></th></tr></thead>
+  <tbody>
+    {% for r in items %}
+    <tr>
+      <td>{{ r.id }}</td><td>{{ r.category or '—' }}</td><td>{{ r.author }}</td><td>{{ r.rating }}</td>
+      <td>{{ r.text }}</td>
+      <td>{{ r.created_at.strftime('%d.%m.%Y') }}</td>
+      <td>
+        <form method="POST" action="{{ url_for('admin_reviews_delete', rid=r.id) }}" onsubmit="return confirm('Удалить?')">
+          <button class="btn-sm danger">✕</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "admin/_layout.html" %}
+{% block admin %}
+<h1>Управление админами</h1>
+
+<div class="card" style="margin-bottom: 20px;">
+  <h3>Назначить / снять админа по email</h3>
+  <p style="color: var(--muted); font-size: 13px;">
+    Если пользователя с таким email ещё нет — он будет помечен и получит права админа,
+    как только впервые войдёт через любой провайдер.
+  </p>
+  <form method="POST" class="form-grid">
+    <label><span>Email</span><input name="email" type="email" required></label>
+    <div style="display:flex; gap:10px;">
+      <button class="btn" name="action" value="grant">Назначить админом</button>
+      <button class="btn-sm danger" name="action" value="revoke">Снять админа</button>
+    </div>
+  </form>
+</div>
+
+<table class="data">
+  <thead><tr><th>#</th><th>Email</th><th>Имя</th><th>Провайдер</th><th>Админ?</th><th>Регистрация</th></tr></thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.id }}</td>
+      <td>{{ u.email }}</td>
+      <td>{{ u.name or '' }}</td>
+      <td>{{ u.provider }}</td>
+      <td>{% if u.is_admin %}<span style="color: var(--ok); font-weight:700;">✓</span>{% else %}—{% endif %}</td>
+      <td>{{ u.created_at.strftime('%d.%m.%Y') }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

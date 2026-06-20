@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <div class="status-pill"><span class="dot"></span>СЕРВЕРА НА СВЯЗИ · ПОДДЕРЖКА 24/7</div>
+    <h1>{{ S('hero_title') or brand_name }}</h1>
+    <p>{{ S('hero_subtitle') }}</p>
+    <div class="cta">
+      {% if site_links.discord %}<a class="btn" href="{{ site_links.discord }}" target="_blank">{{ S('hero_cta_text') or 'Связаться' }}</a>{% endif %}
+      <a class="btn ghost" href="#services">Наши услуги</a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-v">500+</div>
+        <div class="hero-stat-l">Защищённых стримеров</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-v">3</div>
+        <div class="hero-stat-l">Сборки RW</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-v">24/7</div>
+        <div class="hero-stat-l">Поддержка</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="rw-buttons">
+  <div class="container">
+    <span class="eyebrow">RW · Сборки</span>
+    <h2 class="section-title">Сборки ReallyWorld</h2>
+    <p class="section-sub">Покупка производится с баланса аккаунта. Пополнить баланс можно через FunPay (ключ активации после оплаты).</p>
+    <div class="grid cols-3">
+      {% for b in builds %}
+      <div class="card hud-card build-card">
+        {% if b.tier_label %}<span class="tier-tag">{{ b.tier_label }}</span>{% endif %}
+        <h3>{{ b.title }}</h3>
+        {% if b.description %}<p>{{ b.description }}</p>{% endif %}
+        <div class="price">{{ b.price|money }} ₽</div>
+        {% if current_user.is_authenticated %}
+          <form method="POST" action="{{ url_for('buy_build', build_id=b.id) }}" class="build-buy-form">
+            <button class="btn-sm primary build-buy-btn" type="submit">Купить за {{ b.price|money }} ₽</button>
+          </form>
+        {% else %}
+          <a class="btn-sm primary build-buy-btn" href="{{ url_for('auth_page', next=url_for('index') + '#rw-buttons') }}">Войти, чтобы купить</a>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="section-sub">Сборки скоро появятся.</p>
+      {% endfor %}
+    </div>
+    {% if current_user.is_authenticated %}
+    <p class="section-sub" style="margin:18px 0 0;">
+      Уже купили сборку? <a href="{{ url_for('my_builds') }}">Перейти в «Мои сборки»</a> за ссылкой на скачивание.
+    </p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="block" id="services">
+  <div class="container">
+    <span class="eyebrow">Прайс</span>
+    <h2 class="section-title">Услуги</h2>
+    <p class="section-sub">Выберите пакет — или закажите индивидуальное решение.</p>
+    <div class="grid cols-3">
+      {% for s in services %}
+        {% if s.url %}
+        <a class="card hud-card" href="{{ s.url }}" target="_blank" style="text-decoration:none;color:inherit;display:block;">
+        {% else %}
+        <div class="card hud-card">
+        {% endif %}
+          <span class="tier-tag">PKG 0{{ loop.index }}</span>
+          <h3>{{ s.title }}</h3>
+          {% if s.price %}<div class="price">{{ s.price }}</div>{% endif %}
+          <p>{{ s.description }}</p>
+        {% if s.url %}
+        </a>
+        {% else %}
+        </div>
+        {% endif %}
+      {% else %}
+        <p class="section-sub">Скоро здесь появятся услуги.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<section class="block" id="reviews">
+  <div class="container">
+    <span class="eyebrow">Отзывы клиентов</span>
+    <h2 class="section-title">Отзывы</h2>
+    <p class="section-sub">Оценки и отзывы по каждой сборке от наших клиентов. Чтобы оставить свой — войдите в аккаунт.</p>
+
+    {% for cat in review_categories %}
+    <div class="review-category">
+      <div class="review-cat-head">
+        <h3>{{ cat }}</h3>
+        {% if avg_ratings[cat] %}
+          <span class="review-cat-avg">
+            <span class="stars">{{ '★' * (avg_ratings[cat] | round(0, 'floor') | int) }}{{ '☆' * (5 - (avg_ratings[cat] | round(0, 'floor') | int)) }}</span>
+            {{ avg_ratings[cat] }} / 5 · {{ reviews_by_cat[cat] | length }} отзыв(ов)
+          </span>
+        {% else %}
+          <span class="review-cat-avg muted">Пока нет отзывов</span>
+        {% endif %}
+      </div>
+
+      {% if reviews_by_cat[cat] %}
+      <div class="grid cols-3">
+        {% for r in reviews_by_cat[cat][:6] %}
+        <div class="card hud-card">
+          <div class="stars">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</div>
+          <p style="margin:10px 0;">«{{ r.text }}»</p>
+          <div style="color:var(--muted);font-size:13px;">— {{ r.author or 'Аноним' }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if current_user.is_authenticated %}
+        {% set my = user_reviews.get(cat) %}
+        <form method="POST" action="{{ url_for('add_review') }}" class="review-form">
+          <input type="hidden" name="category" value="{{ cat }}">
+          <div class="star-input">
+            {% for n in [5,4,3,2,1] %}
+            <input type="radio" name="rating" id="r-{{ cat | replace(' ', '') }}-{{ n }}" value="{{ n }}" {% if my and my.rating == n %}checked{% elif not my and n == 5 %}checked{% endif %}>
+            <label for="r-{{ cat | replace(' ', '') }}-{{ n }}">★</label>
+            {% endfor %}
+          </div>
+          <textarea name="text" placeholder="Ваш отзыв о сборке «{{ cat }}»..." required>{{ my.text if my else '' }}</textarea>
+          <div class="captcha-field">
+            <span class="captcha-icon">🤖</span>
+            <span class="captcha-question">{{ captcha_question }}</span>
+            <input type="text" name="captcha_answer" inputmode="numeric" placeholder="Ответ" required>
+          </div>
+          <div class="hp-field" aria-hidden="true">
+            <label>Сайт компании (оставьте пустым)<input type="text" name="company_site" tabindex="-1" autocomplete="off"></label>
+          </div>
+          <input type="hidden" name="form_ts" value="{{ form_ts }}">
+          <div class="review-form-actions">
+            <button class="btn" type="submit">{{ 'Обновить отзыв' if my else 'Оставить отзыв' }}</button>
+          </div>
+        </form>
+        {% if my %}
+        <form method="POST" action="{{ url_for('delete_review') }}" onsubmit="return confirm('Удалить ваш отзыв?')" class="review-delete-form">
+          <input type="hidden" name="category" value="{{ cat }}">
+          <button class="btn-sm danger" type="submit">Удалить мой отзыв</button>
+        </form>
+        {% endif %}
+      {% else %}
+        <p class="section-sub" style="margin:10px 0 0;">Чтобы оставить отзыв на «{{ cat }}», <a href="{{ url_for('auth_page', next=url_for('index') + '#reviews') }}">войдите в аккаунт</a>.</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% if news %}
+<section class="block">
+  <div class="container">
+    <h2 class="section-title">Новости</h2>
+    <div class="grid cols-3">
+      {% for n in news %}
+      <div class="card">
+        <h3>{{ n.title }}</h3>
+        <p>{{ n.body }}</p>
+        <div style="color:var(--muted);font-size:12px;margin-top:10px;">{{ n.created_at.strftime('%d.%m.%Y') }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% if partners %}
+<section class="block">
+  <div class="container">
+    <h2 class="section-title">Партнёры</h2>
+    <div class="grid cols-3">
+      {% for p in partners %}
+      <a class="card" href="{{ p.url or '#' }}" target="_blank" style="display:flex;align-items:center;gap:14px;">
+        {% if p.logo_url %}<img src="{{ p.logo_url }}" style="width:50px;height:50px;border-radius:10px;object-fit:cover;">{% endif %}
+        <div><h3 style="margin:0">{{ p.name }}</h3></div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

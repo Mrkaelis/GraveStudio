@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Мои сборки — {{ brand_name }}{% endblock %}
+{% block content %}
+<section class="block">
+  <div class="container">
+    <span class="eyebrow">Личный кабинет</span>
+    <h2 class="section-title">Мои сборки</h2>
+    <p class="section-sub">Здесь появляются ссылки на скачивание сразу после оплаты сборки с баланса.</p>
+
+    {% if purchases %}
+    <div class="grid cols-3">
+      {% for p in purchases %}
+      <div class="card hud-card build-card" style="text-align:left;align-items:stretch;">
+        {% if p.build.tier_label %}<span class="tier-tag">{{ p.build.tier_label }}</span>{% endif %}
+        <h3>{{ p.build.title }}</h3>
+        <p style="margin-bottom:6px;">Куплено: {{ p.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+        <p style="margin-bottom:14px;color:var(--muted);">Цена покупки: {{ p.price_paid|money }} ₽</p>
+        {% if p.build.download_url %}
+          <a class="btn-sm primary" href="{{ p.build.download_url }}" target="_blank" rel="noopener" style="width:100%;text-align:center;text-decoration:none;color:#fff;">Скачать сборку</a>
+        {% else %}
+          <span style="color:var(--muted);font-size:13px;">Ссылка пока не загружена — обратитесь в поддержку.</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="max-width:600px;">
+      <p style="margin:0 0 14px;color:var(--muted);">У вас пока нет купленных сборок.</p>
+      <a class="btn" href="{{ url_for('index') }}#rw-buttons">Перейти к сборкам</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

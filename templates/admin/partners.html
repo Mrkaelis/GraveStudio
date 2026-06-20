@@ -1,0 +1,31 @@
+{% extends "admin/_layout.html" %}
+{% block admin %}
+<h1>Партнёры</h1>
+<div class="card" style="margin-bottom: 20px;">
+  <h3>Добавить партнёра</h3>
+  <form method="POST" class="form-grid">
+    <div class="row2">
+      <label><span>Название</span><input name="name" required></label>
+      <label><span>URL</span><input name="url"></label>
+    </div>
+    <label><span>Логотип (URL)</span><input name="logo_url"></label>
+    <button class="btn">Добавить</button>
+  </form>
+</div>
+<table class="data">
+  <thead><tr><th>#</th><th>Название</th><th>URL</th><th>Логотип</th><th></th></tr></thead>
+  <tbody>
+    {% for p in items %}
+    <tr>
+      <td>{{ p.id }}</td><td>{{ p.name }}</td><td>{{ p.url }}</td>
+      <td>{% if p.logo_url %}<img src="{{ p.logo_url }}" style="height:30px;border-radius:6px;">{% endif %}</td>
+      <td>
+        <form method="POST" action="{{ url_for('admin_partners_delete', pid=p.id) }}" onsubmit="return confirm('Удалить?')">
+          <button class="btn-sm danger">✕</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

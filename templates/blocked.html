@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — {{ brand_name }}{% endblock %}
+{% block content %}
+<div class="no-access">
+  <div>
+    <h1>{{ code }}</h1>
+    <h2>{{ title }}</h2>
+    <p style="color: var(--muted); max-width: 480px;">{{ message }}</p>
+    <a class="btn" href="{{ url_for('index') }}">На главную</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Доступ к админ-панели — {{ brand_name }}{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <div class="auth-card">
+    <h1>🔒 Админ-панель</h1>
+    <p class="muted">Введите пароль доступа, чтобы продолжить.</p>
+
+    <form method="POST">
+      <label class="field">
+        <input type="password" name="password" placeholder="Пароль доступа" autofocus required>
+      </label>
+      <div class="hp-field" aria-hidden="true">
+        <label>Сайт компании (оставьте пустым)<input type="text" name="company_site" tabindex="-1" autocomplete="off"></label>
+      </div>
+      <input type="hidden" name="form_ts" value="{{ form_ts }}">
+      <button class="btn" style="width:100%;" type="submit">Войти</button>
+    </form>
+
+    <p class="muted" style="margin-top:18px; font-size:13px;">
+      Это отдельный пароль самой панели. После него вам всё ещё нужно
+      <a href="{{ url_for('auth_page') }}">войти в аккаунт</a> с правами администратора.
+    </p>
+  </div>
+</div>
+{% endblock %}

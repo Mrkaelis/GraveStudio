@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><title>Тех. работы — {{ brand_name }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head><body>
+<div class="maint">
+  <div>
+    <h1>{{ brand_name }}</h1>
+    <p style="color: var(--muted); font-size: 18px; max-width: 600px;">{{ text }}</p>
+    {% if site_links.discord %}<a class="btn" href="{{ site_links.discord }}" target="_blank">Discord</a>{% endif %}
+  </div>
+</div>
+</body></html>

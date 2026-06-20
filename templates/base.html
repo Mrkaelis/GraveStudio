@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ brand_name }}{% endblock %}</title>
+<meta name="description" content="{{ brand_tagline }}">
+<meta name="robots" content="noarchive">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+  :root { --accent: {{ accent_color }}; --bg: {{ background_color }}; }
+  {% if background_image %}
+  body {
+    background-image:
+      linear-gradient(rgba(8,8,15,.85), rgba(8,8,15,.9)),
+      url('{{ background_image }}');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+  {% endif %}
+</style>
+</head>
+<body>
+<!--
+  © {{ brand_name }} — код, дизайн и контент этой страницы защищены
+  авторским правом. Копирование, парсинг и использование без письменного
+  разрешения правообладателя запрещены.
+-->
+<div class="sr-protect" aria-hidden="true">© {{ brand_name }} — дизайн и код защищены авторским правом.</div>
+
+<canvas id="particles-fx" data-effect="{{ particle_effect }}" aria-hidden="true"></canvas>
+
+{% block header %}
+<header class="site-header">
+  <div class="container nav">
+    <a href="{{ url_for('index') }}" class="brand">
+      {% if brand_logo %}
+        <img src="{{ brand_logo }}" alt="{{ brand_name }}">
+      {% else %}
+        <span class="brand-mark">G</span>
+      {% endif %}
+      {{ brand_name }}
+    </a>
+    <nav class="nav-links">
+      <a href="{{ url_for('index') }}">Главная</a>
+      <a href="{{ url_for('index') }}#rw-buttons">Сборки</a>
+      <a href="{{ url_for('index') }}#services">Услуги</a>
+      <a href="{{ url_for('about') }}">О нас</a>
+      <a href="{{ url_for('partners_page') }}">Партнёры</a>
+    </nav>
+    <div class="nav-spacer"></div>
+    {% if site_links.discord %}<a class="icon-btn discord" target="_blank" rel="noopener" href="{{ site_links.discord }}">Discord</a>{% endif %}
+    {% if site_links.telegram %}<a class="icon-btn telegram" target="_blank" rel="noopener" href="{{ site_links.telegram }}">Telegram</a>{% endif %}
+
+    {% if current_user.is_authenticated %}
+      <div class="profile-wrap">
+        <button type="button" class="user-chip" onclick="toggleProfileMenu(event)">
+          {% if current_user.avatar_url %}
+            <img src="{{ current_user.avatar_url }}" alt="">
+          {% else %}
+            <span class="avatar-fallback">{{ (current_user.name or current_user.email)[0]|upper }}</span>
+          {% endif %}
+          <span>{{ current_user.name or current_user.email }}</span>
+          <span class="balance-pill">{{ current_user.balance|money }} ₽</span>
+        </button>
+
+        <div class="profile-menu" id="profile-menu">
+          <div class="profile-menu-head">
+            {% if current_user.avatar_url %}
+              <img src="{{ current_user.avatar_url }}" alt="">
+            {% else %}
+              <span class="avatar-fallback">{{ (current_user.name or current_user.email)[0]|upper }}</span>
+            {% endif %}
+            <div>
+              <div class="profile-menu-name">{{ current_user.name or current_user.email }}</div>
+              <div class="profile-menu-email">{{ current_user.email }}</div>
+            </div>
+          </div>
+
+          <div class="profile-menu-balance">
+            <span>Баланс</span>
+            <b>{{ current_user.balance|money }} ₽</b>
+          </div>
+
+          <form method="POST" action="{{ url_for('redeem_code') }}" class="profile-menu-redeem">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <input type="text" name="code" placeholder="Код активации" autocomplete="off" required>
+            <button class="btn-sm primary" type="submit">Активировать</button>
+          </form>
+
+          <a class="profile-menu-link" href="{{ url_for('my_builds') }}">📦 Мои сборки</a>
+          <a class="profile-menu-link" href="{{ url_for('logout') }}">Выйти</a>
+        </div>
+      </div>
+    {% else %}
+      <a class="icon-btn" href="{{ url_for('auth_page') }}">Войти</a>
+    {% endif %}
+  </div>
+</header>
+{% endblock %}
+
+<div class="flash-wrap">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, m in msgs %}
+      <div class="flash {{ cat }}">{{ m }}</div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+{% block content %}{% endblock %}
+
+{% block footer %}
+<footer class="site-footer">
+  <div class="container footer-row">
+    <div>
+      <div style="color:#fff;font-weight:800;font-size:18px;margin-bottom:6px;">{{ brand_name }}</div>
+      <div>© {{ now_year() }} {{ brand_name }}. Все права защищены.</div>
+    </div>
+    <div class="links">
+      {% if site_links.discord %}<a class="icon-btn discord" target="_blank" href="{{ site_links.discord }}">Discord</a>{% endif %}
+      {% if site_links.telegram %}<a class="icon-btn telegram" target="_blank" href="{{ site_links.telegram }}">Telegram</a>{% endif %}
+      {% if site_links.funpay %}<a class="icon-btn funpay" target="_blank" href="{{ site_links.funpay }}">FunPay</a>{% endif %}
+      {% if site_links.support %}<a class="icon-btn" target="_blank" href="{{ site_links.support }}">Поддержка</a>{% endif %}
+    </div>
+  </div>
+</footer>
+{% endblock %}
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/particles.js') }}"></script>
+<script src="{{ url_for('static', filename='js/protect.js') }}"></script>
+</body>
+</html>

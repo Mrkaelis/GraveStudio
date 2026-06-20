@@ -1,0 +1,105 @@
+{% extends "admin/_layout.html" %}
+{% block admin %}
+<h1>Настройки сайта</h1>
+<form method="POST" class="form-grid" enctype="multipart/form-data">
+
+  <div class="card">
+    <h3>Бренд</h3>
+    <div class="row2">
+      <label><span>Название</span><input name="brand_name" value="{{ values.brand_name }}"></label>
+      <label><span>Логотип (URL картинки, опционально)</span><input name="brand_logo" value="{{ values.brand_logo }}"></label>
+    </div>
+    <label><span>Слоган</span><input name="brand_tagline" value="{{ values.brand_tagline }}"></label>
+    <label>
+      <span>Или загрузить логотип файлом</span>
+      <input type="file" name="brand_logo_upload" accept="image/*">
+    </label>
+    {% if values.brand_logo %}
+    <div style="display:flex; align-items:center; gap:12px; margin-top:8px;">
+      <img src="{{ values.brand_logo }}" alt="" style="height:40px; border-radius:8px; background:#0c0c16;">
+      <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:13px; color: var(--muted);">
+        <input type="checkbox" name="brand_logo_clear"> Удалить текущий логотип
+      </label>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>Главный экран (hero)</h3>
+    <label><span>Заголовок</span><input name="hero_title" value="{{ values.hero_title }}"></label>
+    <label><span>Подзаголовок</span><textarea name="hero_subtitle">{{ values.hero_subtitle }}</textarea></label>
+    <label><span>Текст кнопки CTA</span><input name="hero_cta_text" value="{{ values.hero_cta_text }}"></label>
+  </div>
+
+  <div class="card">
+    <h3>О нас</h3>
+    <label><span>Текст</span><textarea name="about_text" style="min-height:140px;">{{ values.about_text }}</textarea></label>
+  </div>
+
+  <div class="card">
+    <h3>Внешний вид</h3>
+    <div class="row2">
+      <label><span>Фон сайта (hex)</span><input name="background_color" value="{{ values.background_color }}"></label>
+      <label><span>Акцент (hex)</span><input name="accent_color" value="{{ values.accent_color }}"></label>
+    </div>
+    <label><span>Фоновая картинка (URL, опционально)</span><input name="background_image" value="{{ values.background_image }}"></label>
+    <label>
+      <span>Или загрузить фоновую картинку файлом</span>
+      <input type="file" name="background_image_upload" accept="image/*">
+    </label>
+    {% if values.background_image %}
+    <div style="margin-top:8px;">
+      <img src="{{ values.background_image }}" alt="" style="max-height:120px; border-radius:10px; border:1px solid var(--border);">
+      <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:13px; color: var(--muted); margin-top:8px;">
+        <input type="checkbox" name="background_image_clear"> Удалить фоновую картинку
+      </label>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h3>✨ Партиклы (анимация поверх сайта)</h3>
+    <p style="color: var(--muted); font-size: 13px; margin-top:0;">
+      Лёгкая анимация частиц на фоне всего сайта. Выберите эффект или отключите.
+    </p>
+    <label>
+      <span>Эффект</span>
+      <select name="particle_effect">
+        <option value="none"   {% if values.particle_effect == 'none' %}selected{% endif %}>Выключено</option>
+        <option value="winter" {% if values.particle_effect == 'winter' %}selected{% endif %}>❄️ Зима — снег</option>
+        <option value="spring" {% if values.particle_effect == 'spring' %}selected{% endif %}>🌸 Весна — лепестки</option>
+        <option value="summer" {% if values.particle_effect == 'summer' %}selected{% endif %}>✨ Лето — светлячки</option>
+        <option value="autumn" {% if values.particle_effect == 'autumn' %}selected{% endif %}>🍂 Осень — листья</option>
+        <option value="magic"  {% if values.particle_effect == 'magic' %}selected{% endif %}>🔮 Магия — искры</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="card">
+    <h3>Ссылки на кнопки (хедер / футер)</h3>
+    <p style="color: var(--muted); font-size: 13px; margin-top:0;">
+      Меняйте URL — кнопки на всём сайте обновятся.
+      Если поле пустое, кнопка скрывается.
+    </p>
+    <div class="row2">
+      <label><span>Discord</span><input name="link_discord" value="{{ values.link_discord }}"></label>
+      <label><span>Telegram</span><input name="link_telegram" value="{{ values.link_telegram }}"></label>
+    </div>
+    <div class="row2">
+      <label><span>FunPay</span><input name="link_funpay" value="{{ values.link_funpay }}"></label>
+      <label><span>Тех. поддержка</span><input name="link_support" value="{{ values.link_support }}"></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Технические работы</h3>
+    <label style="display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" name="maintenance" {% if values.maintenance %}checked{% endif %}>
+      <span style="margin:0;">Включить заглушку для всех (админам сайт остаётся доступен)</span>
+    </label>
+    <label><span>Текст заглушки</span><textarea name="maintenance_text">{{ values.maintenance_text }}</textarea></label>
+  </div>
+
+  <button class="btn" type="submit">Сохранить всё</button>
+</form>
+{% endblock %}

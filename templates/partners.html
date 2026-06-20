@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="block">
+  <div class="container">
+    <h1 class="section-title">Партнёры</h1>
+    <p class="section-sub">Мы работаем с проверенными платформами.</p>
+    <div class="grid cols-2">
+      {% for p in partners %}
+      <a class="card" href="{{ p.url or '#' }}" target="_blank" style="display:flex;align-items:center;gap:14px;">
+        {% if p.logo_url %}<img src="{{ p.logo_url }}" style="width:60px;height:60px;border-radius:10px;object-fit:cover;">{% endif %}
+        <div>
+          <h3 style="margin:0">{{ p.name }}</h3>
+          <div style="color:var(--muted);font-size:13px;">{{ p.url }}</div>
+        </div>
+      </a>
+      {% else %}
+        <p class="section-sub">Пока пусто.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
