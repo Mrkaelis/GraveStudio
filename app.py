@@ -1,6 +1,5 @@
 """
 GraveStudio — Flask app
-Сайт с админ-панелью, OAuth (Google + Discord) и email/пароль.
 """
 import os
 import json
@@ -28,14 +27,10 @@ from werkzeug.utils import secure_filename
 from authlib.integrations.flask_client import OAuth
 from sqlalchemy import inspect, text as sa_text
 
-# Категории сборок, по которым пользователи оставляют отзывы.
 REVIEW_CATEGORIES = ["RW Default", "RW Full", "RW Premium"]
 
 load_dotenv()
 
-# ---------------------------------------------------------------------------
-# App / DB
-# ---------------------------------------------------------------------------
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
@@ -53,9 +48,7 @@ else:
     )
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_pre_ping": True,
-}
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -63,9 +56,6 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=12)
 if os.getenv("FLASK_ENV") == "production":
     app.config["SESSION_COOKIE_SECURE"] = True
 
-# ---------------------------------------------------------------------------
-# Загрузка файлов
-# ---------------------------------------------------------------------------
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "gif", "webp", "svg"}
@@ -91,21 +81,14 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "auth_page"
 
-# ---------------------------------------------------------------------------
-# Жёстко вписанный список суперадминов
-# ---------------------------------------------------------------------------
-HARDCODED_ADMINS = {
-    "dimacontrol2223@gmail.com",
-}
+HARDCODED_ADMINS = {"dimacontrol2223@gmail.com"}
 
-# ---------------------------------------------------------------------------
-# Rate limiting (in-memory)
-# ---------------------------------------------------------------------------
-_login_attempts: dict = defaultdict(list)
+# --- Rate limiting ---
+_login_attempts = defaultdict(list)
 RATE_LIMIT_ATTEMPTS = int(os.getenv("RATE_LIMIT_ATTEMPTS", "5"))
-RATE_LIMIT_WINDOW  = int(os.getenv("RATE_LIMIT_WINDOW",   "300"))
-RATE_LIMIT_LOCKOUT = int(os.getenv("RATE_LIMIT_LOCKOUT",  "900"))
-_lockouts: dict = {}
+RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "300"))
+RATE_LIMIT_LOCKOUT = int(os.getenv("RATE_LIMIT_LOCKOUT", "900"))
+_lockouts = {}
 
 def _client_ip():
     forwarded = request.headers.get("X-Forwarded-For")
@@ -113,14 +96,14 @@ def _client_ip():
         return forwarded.split(",")[0].strip()
     return request.remote_addr or "unknown"
 
-def _is_locked(ip: str) -> bool:
+def _is_locked(ip):
     until = _lockouts.get(ip)
     if until and time.time() < until:
         return True
     _lockouts.pop(ip, None)
     return False
 
-def _record_failed(ip: str):
+def _record_failed(ip):
     now = time.time()
     _login_attempts[ip] = [t for t in _login_attempts[ip] if now - t < RATE_LIMIT_WINDOW]
     _login_attempts[ip].append(now)
@@ -128,13 +111,11 @@ def _record_failed(ip: str):
         _lockouts[ip] = now + RATE_LIMIT_LOCKOUT
         _login_attempts[ip] = []
 
-def _clear_attempts(ip: str):
+def _clear_attempts(ip):
     _login_attempts.pop(ip, None)
     _lockouts.pop(ip, None)
 
-# ---------------------------------------------------------------------------
-# Анти-скрейп (сокращён для краткости, но полностью работоспособен)
-# ---------------------------------------------------------------------------
+# --- Anti-scrape (сокращён) ---
 ANTI_SCRAPE_ENABLED = os.getenv("DISABLE_ANTI_SCRAPE", "0") != "1"
 BLOCKED_UA_SUBSTRINGS = [
     "python-requests", "curl/", "wget/", "libwww-perl", "go-http-client",
@@ -161,10 +142,10 @@ GOOD_BOT_SUBSTRINGS = [
     "whatsapp", "vkshare", "discordbot",
 ]
 BLOCK_EMPTY_USER_AGENT = True
-_page_requests: dict = defaultdict(list)
-SCRAPE_RATE_LIMIT  = int(os.getenv("SCRAPE_RATE_LIMIT",  "120"))
+_page_requests = defaultdict(list)
+SCRAPE_RATE_LIMIT = int(os.getenv("SCRAPE_RATE_LIMIT", "120"))
 SCRAPE_RATE_WINDOW = int(os.getenv("SCRAPE_RATE_WINDOW", "60"))
-_scrape_bans: dict = {}
+_scrape_bans = {}
 SCRAPE_BAN_SECONDS = int(os.getenv("SCRAPE_BAN_SECONDS", "3600"))
 HONEYPOT_PATHS = {
     "/wp-admin", "/wp-login.php", "/wp-content", "/wp-includes",
@@ -177,17 +158,17 @@ HONEYPOT_PATHS = {
     "/vendor/phpunit", "/.htaccess", "/web.config",
 }
 
-def _is_banned(ip: str) -> bool:
+def _is_banned(ip):
     until = _scrape_bans.get(ip)
     if until and time.time() < until:
         return True
     _scrape_bans.pop(ip, None)
     return False
 
-def _ban_ip(ip: str, seconds: int = SCRAPE_BAN_SECONDS):
+def _ban_ip(ip, seconds=SCRAPE_BAN_SECONDS):
     _scrape_bans[ip] = time.time() + seconds
 
-def _is_blocked_ua(ua: str) -> bool:
+def _is_blocked_ua(ua):
     ua = (ua or "").strip().lower()
     if not ua:
         return BLOCK_EMPTY_USER_AGENT
@@ -195,13 +176,11 @@ def _is_blocked_ua(ua: str) -> bool:
         return False
     return any(b in ua for b in BLOCKED_UA_SUBSTRINGS)
 
-# ---------------------------------------------------------------------------
-# Honeypot / Captcha
-# ---------------------------------------------------------------------------
+# --- Honeypot / Captcha ---
 HONEYPOT_FIELD = "company_site"
 MIN_FORM_SECONDS = 2
 
-def _honeypot_passed() -> bool:
+def _honeypot_passed():
     if (request.form.get(HONEYPOT_FIELD) or "").strip():
         return False
     ts = request.form.get("form_ts")
@@ -209,13 +188,13 @@ def _honeypot_passed() -> bool:
         try:
             if time.time() - float(ts) < MIN_FORM_SECONDS:
                 return False
-        except (TypeError, ValueError):
+        except:
             pass
     return True
 
 CAPTCHA_TTL = 600
 
-def new_captcha() -> str:
+def new_captcha():
     a, b = random.randint(1, 9), random.randint(1, 9)
     op = random.choice(["+", "-"])
     if op == "-" and a < b:
@@ -225,7 +204,7 @@ def new_captcha() -> str:
     session["captcha_ts"] = time.time()
     return f"{a} {op} {b} = ?"
 
-def _captcha_passed() -> bool:
+def _captcha_passed():
     expected = session.pop("captcha_answer", None)
     ts = session.pop("captcha_ts", None)
     if expected is None or ts is None:
@@ -235,12 +214,10 @@ def _captcha_passed() -> bool:
     given = (request.form.get("captcha_answer") or "").strip()
     try:
         return int(given) == int(expected)
-    except (TypeError, ValueError):
+    except:
         return False
 
-# ---------------------------------------------------------------------------
-# Models
-# ---------------------------------------------------------------------------
+# --- Models ---
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
@@ -251,7 +228,6 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     balance = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
     def check_password(self, pw):
         return self.password_hash and check_password_hash(self.password_hash, pw)
 
@@ -319,9 +295,7 @@ class RedeemCode(db.Model):
     used_by = db.relationship("User", foreign_keys=[used_by_id])
     created_by = db.relationship("User", foreign_keys=[created_by_id])
 
-# ---------------------------------------------------------------------------
-# Settings helpers
-# ---------------------------------------------------------------------------
+# --- Settings ---
 DEFAULT_SETTINGS = {
     "brand_name": "GraveStudio - Лучшая студия!",
     "brand_tagline": "Мы строим качество, которое работает на вас.",
@@ -329,13 +303,10 @@ DEFAULT_SETTINGS = {
     "hero_title": "GraveStudio",
     "hero_subtitle": "Каждое решение GraveStudio — для вашего уверенного роста.",
     "hero_cta_text": "Связаться",
-    "about_text": (
-        "Наша миссия — разрабатывать сборки ReallyWorld, которые не просто функционируют, а становятся основой успешного проекта. Мы уделяем внимание каждой детали, обеспечивая высочайшую оптимизацию и бесперебойную работу вашего сервера. Вы получите продукт, созданный с заботой о ваших целях. "
-        "Мы работаем чисто, в срок и с гарантией."
-    ),
-    "background_color": "#a0a0a0",          # СРЕДНИЙ СЕРЫЙ
+    "about_text": "Наша миссия — разрабатывать сборки ReallyWorld, которые не просто функционируют, а становятся основой успешного проекта. Мы уделяем внимание каждой детали, обеспечивая высочайшую оптимизацию и бесперебойную работу вашего сервера. Вы получите продукт, созданный с заботой о ваших целях. Мы работаем чисто, в срок и с гарантией.",
+    "background_color": "#a0a0a0",
     "background_image": "",
-    "accent_color": "#555555",              # ТЁМНО-СЕРЫЙ
+    "accent_color": "#555555",
     "link_discord": "https://discord.gg/",
     "link_telegram": "https://t.me/officialGraveStudio",
     "link_funpay": "https://funpay.com/users/17053232/",
@@ -391,13 +362,11 @@ def inject_globals():
 def money_filter(value):
     try:
         value = int(value or 0)
-    except (TypeError, ValueError):
+    except:
         value = 0
     return f"{value:,}".replace(",", " ")
 
-# ---------------------------------------------------------------------------
-# Security headers
-# ---------------------------------------------------------------------------
+# --- Security headers ---
 @app.after_request
 def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -419,14 +388,10 @@ def set_security_headers(response):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
-# ---------------------------------------------------------------------------
-# Анти-скрейп before_request
-# ---------------------------------------------------------------------------
+# --- Anti-scrape before_request ---
 @app.before_request
 def anti_scrape_guard():
-    if not ANTI_SCRAPE_ENABLED:
-        return
-    if request.endpoint == "static":
+    if not ANTI_SCRAPE_ENABLED or request.endpoint == "static":
         return
     ip = _client_ip()
     if _is_banned(ip):
@@ -450,29 +415,19 @@ def anti_scrape_guard():
 @app.errorhandler(403)
 def handle_403(e):
     return render_template("blocked.html", code=403, title="Доступ запрещён",
-        message="Запрос похож на автоматический скрипт или парсер и был заблокирован системой защиты сайта."), 403
+        message="Запрос похож на автоматический скрипт и был заблокирован."), 403
 
 @app.errorhandler(429)
 def handle_429(e):
     return render_template("blocked.html", code=429, title="Слишком много запросов",
-        message="Слишком много запросов с вашего адреса за короткое время. Подождите немного и обновите страницу."), 429
+        message="Слишком много запросов. Подождите и обновите."), 429
 
 @app.route("/robots.txt")
 def robots_txt():
-    lines = [
-        "User-agent: *", "Allow: /", "Disallow: /admin", "Disallow: /auth", "",
-        "User-agent: AhrefsBot", "Disallow: /", "User-agent: SemrushBot", "Disallow: /",
-        "User-agent: MJ12bot", "Disallow: /", "User-agent: DotBot", "Disallow: /",
-        "User-agent: PetalBot", "Disallow: /", "User-agent: ia_archiver", "Disallow: /",
-        "User-agent: HTTrack", "Disallow: /", "User-agent: GPTBot", "Disallow: /",
-        "User-agent: CCBot", "Disallow: /", "User-agent: ClaudeBot", "Disallow: /",
-        "User-agent: Bytespider", "Disallow: /", "User-agent: Google-Extended", "Disallow: /",
-    ]
-    return make_response("\n".join(lines), 200, {"Content-Type": "text/plain; charset=utf-8"})
+    lines = ["User-agent: *", "Allow: /", "Disallow: /admin", "Disallow: /auth"]
+    return make_response("\n".join(lines), 200, {"Content-Type": "text/plain"})
 
-# ---------------------------------------------------------------------------
-# Login manager
-# ---------------------------------------------------------------------------
+# --- Login ---
 @login_manager.user_loader
 def load_user(uid):
     return User.query.get(int(uid))
@@ -487,9 +442,7 @@ def admin_required(f):
         return f(*a, **kw)
     return w
 
-# ---------------------------------------------------------------------------
-# Admin gate
-# ---------------------------------------------------------------------------
+# --- Admin gate ---
 @app.before_request
 def admin_gate():
     if not request.endpoint:
@@ -510,7 +463,7 @@ def admin_gate_page():
     if request.method == "POST":
         if not _honeypot_passed():
             _record_failed(ip)
-            flash("Неверный пароль доступа к админ-панели.", "error")
+            flash("Неверный пароль.", "error")
             return render_template("admin/gate.html")
         pw = request.form.get("password", "")
         if pw == ADMIN_GATE_PASSWORD:
@@ -519,12 +472,10 @@ def admin_gate_page():
             nxt = session.pop("admin_gate_next", None) or url_for("admin_home")
             return redirect(nxt)
         _record_failed(ip)
-        flash("Неверный пароль доступа к админ-панели.", "error")
+        flash("Неверный пароль.", "error")
     return render_template("admin/gate.html")
 
-# ---------------------------------------------------------------------------
-# Maintenance
-# ---------------------------------------------------------------------------
+# --- Maintenance ---
 @app.before_request
 def maintenance_gate():
     if request.endpoint in (None, "static"):
@@ -537,9 +488,7 @@ def maintenance_gate():
             return
         return render_template("maintenance.html", text=get_setting("maintenance_text", "")), 503
 
-# ---------------------------------------------------------------------------
-# OAuth
-# ---------------------------------------------------------------------------
+# --- OAuth ---
 oauth = OAuth(app)
 
 if os.getenv("GOOGLE_CLIENT_ID") and os.getenv("GOOGLE_CLIENT_SECRET"):
@@ -581,7 +530,7 @@ def _redirect_uri(provider):
         return base + path
     return request.url_root.rstrip("/") + path
 
-def _is_admin_email(email: str) -> bool:
+def _is_admin_email(email):
     email = email.lower().strip()
     if email in HARDCODED_ADMINS:
         return True
@@ -591,7 +540,7 @@ def _is_admin_email(email: str) -> bool:
 def _finalize_login(email, name, avatar, provider):
     email = (email or "").lower().strip()
     if not email:
-        flash("Не удалось получить email от провайдера.", "error")
+        flash("Не удалось получить email.", "error")
         return redirect(url_for("auth_page"))
     user = User.query.filter_by(email=email).first()
     is_first = User.query.count() == 0
@@ -611,9 +560,7 @@ def _finalize_login(email, name, avatar, provider):
     nxt = session.pop("post_login_next", None) or url_for("index")
     return redirect(nxt)
 
-# ---------------------------------------------------------------------------
-# Public routes
-# ---------------------------------------------------------------------------
+# --- Public routes ---
 @app.route("/")
 def index():
     services = Service.query.order_by(Service.order, Service.id).all()
@@ -643,30 +590,32 @@ def partners_page():
     partners = Partner.query.order_by(Partner.id).all()
     return render_template("partners.html", partners=partners)
 
-# ---------------------------------------------------------------------------
-# User reviews
-# ---------------------------------------------------------------------------
+# --- Profile ---
+@app.route("/profile")
+@login_required
+def profile():
+    return render_template("profile.html")
+
+# --- Reviews ---
 @app.route("/reviews/add", methods=["POST"])
 @login_required
 def add_review():
-    if not _honeypot_passed():
+    if not _honeypot_passed() or not _captcha_passed():
+        flash("Неверная капча.", "error")
         return redirect(url_for("index") + "#reviews")
-    if not _captcha_passed():
-        flash("Неверный ответ на капчу. Попробуйте ещё раз.", "error")
-        return redirect(url_for("index") + "#reviews")
-    category = (request.form.get("category") or "").strip()
+    category = request.form.get("category", "").strip()
     if category not in REVIEW_CATEGORIES:
         abort(400)
     try:
         rating = int(request.form.get("rating") or 0)
-    except ValueError:
+    except:
         rating = 0
     if rating < 1 or rating > 5:
-        flash("Выберите оценку от 1 до 5 звёзд.", "error")
+        flash("Оценка от 1 до 5.", "error")
         return redirect(url_for("index") + "#reviews")
     text_val = (request.form.get("text") or "").strip()
     if not text_val:
-        flash("Текст отзыва не может быть пустым.", "error")
+        flash("Текст не может быть пустым.", "error")
         return redirect(url_for("index") + "#reviews")
     review = Review.query.filter_by(user_id=current_user.id, category=category).first()
     if review:
@@ -685,7 +634,7 @@ def add_review():
 @app.route("/reviews/delete", methods=["POST"])
 @login_required
 def delete_review():
-    category = (request.form.get("category") or "").strip()
+    category = request.form.get("category", "").strip()
     review = Review.query.filter_by(user_id=current_user.id, category=category).first()
     if review:
         db.session.delete(review)
@@ -693,40 +642,36 @@ def delete_review():
         flash("Отзыв удалён.", "ok")
     return redirect(url_for("index") + "#reviews")
 
-# ---------------------------------------------------------------------------
-# Balance
-# ---------------------------------------------------------------------------
+# --- Balance ---
 @app.route("/balance/redeem", methods=["POST"])
 @login_required
 def redeem_code():
     code = (request.form.get("code") or "").strip().upper()
     nxt = request.form.get("next") or request.referrer or url_for("index")
     if not code:
-        flash("Введите код активации.", "error")
+        flash("Введите код.", "error")
         return redirect(nxt)
     rc = RedeemCode.query.filter_by(code=code).first()
     if not rc:
-        flash("Такой код не найден.", "error")
+        flash("Код не найден.", "error")
     elif rc.is_used:
-        flash("Этот код уже был активирован ранее.", "error")
+        flash("Код уже активирован.", "error")
     else:
         rc.is_used = True
         rc.used_by_id = current_user.id
         rc.used_at = datetime.utcnow()
         current_user.balance = (current_user.balance or 0) + rc.amount
         db.session.commit()
-        flash(f"Код активирован! Баланс пополнен на {rc.amount} ₽.", "ok")
+        flash(f"Баланс пополнен на {rc.amount} ₽.", "ok")
     return redirect(nxt)
 
-# ---------------------------------------------------------------------------
-# Buy builds
-# ---------------------------------------------------------------------------
+# --- Buy builds ---
 @app.route("/builds/<int:build_id>/buy", methods=["POST"])
 @login_required
 def buy_build(build_id):
     build = Build.query.get_or_404(build_id)
     if not build.is_active:
-        flash("Эта сборка сейчас недоступна для покупки.", "error")
+        flash("Сборка недоступна.", "error")
         return redirect(url_for("index") + "#rw-buttons")
     if (current_user.balance or 0) < build.price:
         flash(f"Недостаточно средств. Нужно {build.price} ₽, у вас {current_user.balance or 0} ₽.", "error")
@@ -735,7 +680,7 @@ def buy_build(build_id):
     purchase = Purchase(user_id=current_user.id, build_id=build.id, price_paid=build.price)
     db.session.add(purchase)
     db.session.commit()
-    flash(f"Сборка «{build.title}» успешно куплена!", "ok")
+    flash(f"Сборка «{build.title}» куплена!", "ok")
     return redirect(url_for("my_builds"))
 
 @app.route("/my-builds")
@@ -744,9 +689,7 @@ def my_builds():
     purchases = Purchase.query.filter_by(user_id=current_user.id).order_by(Purchase.created_at.desc()).all()
     return render_template("my_builds.html", purchases=purchases)
 
-# ---------------------------------------------------------------------------
-# Auth
-# ---------------------------------------------------------------------------
+# --- Auth ---
 @app.route("/auth", methods=["GET"])
 def auth_page():
     nxt = request.args.get("next")
@@ -788,7 +731,7 @@ def register_email():
         flash("Email и пароль (от 6 символов) обязательны.", "error")
         return redirect(url_for("auth_page"))
     if User.query.filter_by(email=email).first():
-        flash("Пользователь с таким email уже есть.", "error")
+        flash("Пользователь уже есть.", "error")
         return redirect(url_for("auth_page"))
     is_first = User.query.count() == 0
     user = User(email=email, name=name, password_hash=generate_password_hash(pw),
@@ -833,9 +776,7 @@ def logout():
     session.pop("admin_gate_ok", None)
     return redirect(url_for("index"))
 
-# ---------------------------------------------------------------------------
-# Admin panel
-# ---------------------------------------------------------------------------
+# --- Admin panel ---
 @app.route("/admin")
 @admin_required
 def admin_home():
@@ -878,7 +819,7 @@ def admin_settings():
     values["maintenance"] = get_setting("maintenance", "0") == "1"
     return render_template("admin/settings.html", values=values)
 
-def _gen_redeem_code() -> str:
+def _gen_redeem_code():
     alphabet = string.ascii_uppercase + string.digits
     parts = ["".join(secrets.choice(alphabet) for _ in range(4)) for _ in range(4)]
     return "-".join(parts)
@@ -889,15 +830,15 @@ def admin_keys():
     if request.method == "POST":
         try:
             amount = int(request.form.get("amount") or 0)
-        except ValueError:
+        except:
             amount = 0
         try:
             count = int(request.form.get("count") or 1)
-        except ValueError:
+        except:
             count = 1
         count = max(1, min(50, count))
         if amount <= 0:
-            flash("Укажите сумму ключа больше нуля.", "error")
+            flash("Укажите сумму больше нуля.", "error")
         else:
             for _ in range(count):
                 code = _gen_redeem_code()
@@ -905,7 +846,7 @@ def admin_keys():
                     code = _gen_redeem_code()
                 db.session.add(RedeemCode(code=code, amount=amount, created_by_id=current_user.id))
             db.session.commit()
-            flash(f"Сгенерировано ключей: {count} · по {amount} ₽ каждый.", "ok")
+            flash(f"Сгенерировано {count} ключей по {amount} ₽.", "ok")
         return redirect(url_for("admin_keys"))
     items = RedeemCode.query.order_by(RedeemCode.created_at.desc()).all()
     stats = {"total": len(items), "unused": sum(1 for r in items if not r.is_used), "used": sum(1 for r in items if r.is_used)}
@@ -916,13 +857,12 @@ def admin_keys():
 def admin_keys_delete(kid):
     rc = RedeemCode.query.get_or_404(kid)
     if rc.is_used:
-        flash("Нельзя удалить уже активированный ключ.", "error")
+        flash("Нельзя удалить активированный ключ.", "error")
     else:
         db.session.delete(rc)
         db.session.commit()
     return redirect(url_for("admin_keys"))
 
-# --- services ---
 @app.route("/admin/services", methods=["GET", "POST"])
 @admin_required
 def admin_services():
@@ -955,14 +895,13 @@ def admin_services_delete(sid):
     db.session.commit()
     return redirect(url_for("admin_services"))
 
-# --- builds ---
 @app.route("/admin/builds", methods=["GET", "POST"])
 @admin_required
 def admin_builds():
     if request.method == "POST":
         try:
             price = int(request.form.get("price") or 0)
-        except ValueError:
+        except:
             price = 0
         b = Build(title=request.form["title"].strip(), tier_label=request.form.get("tier_label", "").strip(),
             price=price, description=request.form.get("description", "").strip(),
@@ -982,7 +921,7 @@ def admin_builds_update(bid):
     b = Build.query.get_or_404(bid)
     try:
         b.price = int(request.form.get("price") or 0)
-    except ValueError:
+    except:
         b.price = 0
     b.title = request.form.get("title", b.title).strip()
     b.tier_label = request.form.get("tier_label", "").strip()
@@ -999,14 +938,13 @@ def admin_builds_update(bid):
 def admin_builds_delete(bid):
     b = Build.query.get_or_404(bid)
     if Purchase.query.filter_by(build_id=b.id).count() > 0:
-        flash("Нельзя удалить сборку с покупками. Можно деактивировать.", "error")
+        flash("Нельзя удалить сборку с покупками.", "error")
         return redirect(url_for("admin_builds"))
     db.session.delete(b)
     db.session.commit()
     flash("Сборка удалена.", "ok")
     return redirect(url_for("admin_builds"))
 
-# --- reviews ---
 @app.route("/admin/reviews", methods=["GET", "POST"])
 @admin_required
 def admin_reviews():
@@ -1026,7 +964,6 @@ def admin_reviews_delete(rid):
     db.session.commit()
     return redirect(url_for("admin_reviews"))
 
-# --- news ---
 @app.route("/admin/news", methods=["GET", "POST"])
 @admin_required
 def admin_news():
@@ -1044,7 +981,6 @@ def admin_news_delete(nid):
     db.session.commit()
     return redirect(url_for("admin_news"))
 
-# --- partners ---
 @app.route("/admin/partners", methods=["GET", "POST"])
 @admin_required
 def admin_partners():
@@ -1063,7 +999,6 @@ def admin_partners_delete(pid):
     db.session.commit()
     return redirect(url_for("admin_partners"))
 
-# --- admins ---
 @app.route("/admin/admins", methods=["GET", "POST"])
 @admin_required
 def admin_admins():
@@ -1075,7 +1010,7 @@ def admin_admins():
             u = User(email=email, name=email.split("@")[0], provider="pending")
             db.session.add(u)
         if action != "grant" and _is_admin_email(email):
-            flash(f"Нельзя снять права с системного администратора: {email}", "error")
+            flash(f"Нельзя снять права с системного админа: {email}", "error")
             return redirect(url_for("admin_admins"))
         u.is_admin = (action == "grant")
         db.session.commit()
@@ -1084,9 +1019,7 @@ def admin_admins():
     users = User.query.order_by(User.is_admin.desc(), User.created_at.desc()).all()
     return render_template("admin/admins.html", users=users)
 
-# ---------------------------------------------------------------------------
-# Seeding
-# ---------------------------------------------------------------------------
+# --- Seeding ---
 def _migrate_review_table():
     insp = inspect(db.engine)
     if "review" not in insp.get_table_names():
@@ -1125,8 +1058,8 @@ def seed():
         if Service.query.count() == 0:
             for i, (t, p, d) in enumerate([
                 ("RW Default", "от 500₽", "Стандартный пакет настройки сервера."),
-                ("RW Full", "от 1500₽", "Полная сборка с плагинами и кастомом."),
-                ("RW Business", "от 5000₽", "Бизнес-пакет: поддержка 24/7, индивидуальные решения."),
+                ("RW Full", "от 1500₽", "Полная сборка с плагинами."),
+                ("RW Business", "от 5000₽", "Бизнес-пакет: поддержка 24/7."),
             ]):
                 db.session.add(Service(title=t, price=p, description=d, order=i))
         if Partner.query.count() == 0:
