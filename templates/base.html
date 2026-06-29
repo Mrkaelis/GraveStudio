@@ -10,11 +10,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <style>
-  :root { --accent: {{ accent_color }}; --bg: {{ background_color }}; }
+  :root {
+    --accent: {{ accent_color }};
+    --bg: {{ background_color }};
+  }
   {% if background_image %}
   body {
     background-image:
-      linear-gradient(rgba(8,8,15,.85), rgba(8,8,15,.9)),
+      linear-gradient(rgba(200,200,200,0.7), rgba(200,200,200,0.8)),
       url('{{ background_image }}');
     background-size: cover;
     background-position: center;
