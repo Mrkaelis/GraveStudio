@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Профиль — {{ brand_name }}{% endblock %}
+
+{% block content %}
+<section class="block">
+  <div class="container" style="max-width: 480px;">
+    <div class="card" style="text-align:center;">
+      <div class="profile-avatar-large" style="margin: 0 auto 16px;">
+        {% if current_user.avatar_url %}
+          <img src="{{ current_user.avatar_url }}" alt="" style="width: 72px; height: 72px; border-radius: 50%;">
+        {% else %}
+          <span class="avatar-fallback" style="width:72px;height:72px;font-size:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent-2));color:#fff;font-weight:700;">
+            {{ (current_user.name or current_user.email)[0]|upper }}
+          </span>
+        {% endif %}
+      </div>
+      <h2 style="margin:0 0 4px;">{{ current_user.name or current_user.email }}</h2>
+      <p style="color: var(--muted); margin:0 0 20px;">{{ current_user.email }}</p>
+
+      <div class="profile-menu-balance" style="display:flex;justify-content:space-between;padding:12px 16px;background:rgba(0,0,0,0.05);border-radius:12px;margin-bottom:20px;">
+        <span style="color:var(--muted);">Баланс</span>
+        <b style="font-size:22px;">{{ current_user.balance|money }} ₽</b>
+      </div>
+
+      <form method="POST" action="{{ url_for('redeem_code') }}" style="display:flex;gap:8px;margin-bottom:16px;">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <input type="text" name="code" placeholder="Код активации" autocomplete="off" required
+               style="flex:1;padding:10px 12px;border-radius:9px;background:#fff;color:#000;border:1px solid var(--border);font-size:14px;">
+        <button class="btn-sm primary" type="submit">Активировать</button>
+      </form>
+
+      <div style="display:flex;gap:10px;flex-direction:column;">
+        <a class="btn" href="{{ url_for('my_builds') }}" style="width:100%;justify-content:center;">📦 Мои сборки</a>
+        <a class="btn ghost" href="{{ url_for('logout') }}" style="width:100%;justify-content:center;">Выйти</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
